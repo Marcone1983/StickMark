@@ -466,7 +466,7 @@ export const setTelegramWebhook = action({
 
 // Aggiorna/crea le impostazioni correnti
 export const upsertSettings = mutation({
-  args: { telegramBotToken: v.optional(v.string()), tonDestinationWallet: v.optional(v.string()), tonToStarsRate: v.optional(v.number()), appBaseUrl: v.optional(v.string()), clipdropApiKey: v.optional(v.string()) },
+  args: { telegramBotToken: v.optional(v.string()), tonDestinationWallet: v.optional(v.string()), tonToStarsRate: v.optional(v.number()), appBaseUrl: v.optional(v.string()), clipdropApiKey: v.optional(v.string()), huggingfaceApiToken: v.optional(v.string()) },
   returns: v.object({ ok: v.boolean() }),
   handler: async (ctx, args) => {
     const current = await ctx.db.query("settings").order("desc").first();
@@ -477,6 +477,7 @@ export const upsertSettings = mutation({
         ...(typeof args.tonToStarsRate === 'number' ? { tonToStarsRate: args.tonToStarsRate } : {}),
         ...(args.appBaseUrl ? { appBaseUrl: args.appBaseUrl } : {}),
         ...(args.clipdropApiKey ? { clipdropApiKey: args.clipdropApiKey } : {}),
+        ...(args.huggingfaceApiToken ? { huggingfaceApiToken: args.huggingfaceApiToken } : {}),
       } as any);
     } else {
       await ctx.db.insert("settings", {
@@ -485,6 +486,7 @@ export const upsertSettings = mutation({
         tonToStarsRate: args.tonToStarsRate ?? 250,
         appBaseUrl: args.appBaseUrl,
         clipdropApiKey: args.clipdropApiKey,
+        huggingfaceApiToken: args.huggingfaceApiToken,
       } as any);
     }
     return { ok: true } as const;

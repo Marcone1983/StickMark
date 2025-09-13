@@ -101,5 +101,7 @@ export default defineSchema({
     appBaseUrl: v.optional(v.string()),
     // API key opzionale per rimozione sfondo (ClipDrop)
     clipdropApiKey: v.optional(v.string()),
+    // Token opzionale Hugging Face per rimozione sfondo open-source
+    huggingfaceApiToken: v.optional(v.string()),
   }),
 });
