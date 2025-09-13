@@ -10,6 +10,7 @@ export default function CreateStickerScreen() {
   const [sourceUri, setSourceUri] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const getUploadUrl = useMutation(api.listings.getUploadUrl);
   const removeBgOpen = useAction(api.images.removeBackgroundOpenSource);
@@ -21,10 +22,11 @@ export default function CreateStickerScreen() {
         input.type = 'file';
         input.accept = 'image/*';
         input.onchange = () => {
-          const file = input.files?.[0];
+          const file = input.files?.[0] as File | undefined;
           if (file) {
             const url = URL.createObjectURL(file);
             setSourceUri(url);
+            setSelectedFile(file);
             setResultUrl(null);
           }
         };
@@ -49,7 +51,11 @@ export default function CreateStickerScreen() {
       });
       if (!result.canceled) {
         const uri = result.assets?.[0]?.uri as string | undefined;
-        if (uri) { setSourceUri(uri); setResultUrl(null); }
+        if (uri) {
+          setSourceUri(uri);
+          setSelectedFile(null);
+          setResultUrl(null);
+        }
       }
     } catch (e: any) {
       Alert.alert('Errore selezione immagine', e?.message || '');
@@ -63,16 +69,24 @@ export default function CreateStickerScreen() {
         return;
       }
       setUploading(true);
-      const fileResp = await fetch(sourceUri);
-      const blob = await fileResp.blob();
+      let blob: Blob;
+      let contentType = 'image/png';
 
-      const { url: uploadUrl } = await getUploadUrl({ contentType: blob.type || 'image/png' });
-      const putResp = await fetch(uploadUrl, { method: 'POST', headers: { 'Content-Type': blob.type || 'application/octet-stream' }, body: blob });
+      if (Platform.OS === 'web' && selectedFile) {
+        blob = selectedFile as Blob;
+        contentType = selectedFile.type || contentType;
+      } else {
+        const fileResp = await fetch(sourceUri);
+        blob = await fileResp.blob();
+        contentType = blob.type || contentType;
+      }
+
+      const { url: uploadUrl } = await getUploadUrl({ contentType });
+      const putResp = await fetch(uploadUrl, { method: 'POST', headers: { 'Content-Type': contentType || 'application/octet-stream' }, body: blob });
       if (!putResp.ok) throw new Error(`Upload failed: ${putResp.status}`);
       const { storageId } = (await putResp.json()) as { storageId: string };
 
-      // Open-source background removal (no token required)
-      const removed = await removeBgOpen({ fileId: storageId as any, contentType: blob.type || 'image/png' });
+      const removed = await removeBgOpen({ fileId: storageId as any, contentType: contentType || 'image/png' });
       setResultUrl(removed.imageUrl);
     } catch (e: any) {
       Alert.alert('Rimozione sfondo non disponibile', e?.message || '');

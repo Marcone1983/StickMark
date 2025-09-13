@@ -560,13 +560,8 @@ export const adminConfigureBot = action({
   args: { telegramBotToken: v.string(), baseUrl: v.string() },
   returns: v.object({ ok: v.boolean(), details: v.optional(v.string()) }),
   handler: async (ctx, args) => {
-    // Aggiorna/crea le impostazioni con token + baseUrl
-    const current = await ctx.db.query("settings").order("desc").first();
-    if (current) {
-      await ctx.db.patch(current._id, { telegramBotToken: args.telegramBotToken, appBaseUrl: args.baseUrl } as any);
-    } else {
-      await ctx.db.insert("settings", { telegramBotToken: args.telegramBotToken, appBaseUrl: args.baseUrl } as any);
-    }
+    // Aggiorna impostazioni tramite mutation (nelle Action non è disponibile ctx.db)
+    await ctx.runMutation(api.payments.upsertSettings, { telegramBotToken: args.telegramBotToken, appBaseUrl: args.baseUrl });
 
     // Configura webhook e menu usando il token fornito direttamente (evitiamo dipendere da loadSettings in caso di race)
     try {

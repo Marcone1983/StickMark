@@ -58,7 +58,8 @@ export default function MarketplaceScreen() {
     return seller === '@you' || seller?.toLowerCase?.().includes('official') || seller?.toLowerCase?.().includes('verify');
   }, []);
 
-  const header = (
+  // Stabilizza header per evitare rimontaggi frequenti che su web possono rompere il DOM
+  const header = useMemo(() => (
     <View>
       <HeaderBack title="Marketplace" />
       <View style={styles.headerInner}>
@@ -98,7 +99,7 @@ export default function MarketplaceScreen() {
         </View>
       </View>
     </View>
-  );
+  ), [search, filter, sort, resultText]);
 
   const data = isLoading ? [1,2,3,4,5,6] : filtered;
 
@@ -108,7 +109,12 @@ export default function MarketplaceScreen() {
     <View style={styles.container}>
       <FlatList
         data={data as any[]}
-        keyExtractor={(item: any, idx) => (isLoading ? String(item) : String(item._id))}
+        keyExtractor={(item: any, idx) => {
+          if (isLoading) return `skeleton-${idx}`;
+          const raw = (item && ((item as any)._id || (item as any).id || (item as any).nft?._id || (item as any).nft?.id)) ?? idx;
+          const str = typeof raw === 'string' ? raw : String(raw);
+          return `listing-${str}`;
+        }}
         numColumns={2}
         {...(!isWeb ? { stickyHeaderIndices: [0] } : {})}
         ListHeaderComponent={header}
