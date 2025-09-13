@@ -14,7 +14,7 @@ export default function HomeScreen() {
   const [botUname, setBotUname] = useState<string>('');
 
   const baseUrl = useMemo(() => {
-    if (Platform.OS === 'web' && typeof window !== 'undefined') return `${window.location.origin}${window.location.pathname}`.replace(/\/$/, '');
+    // Forza sempre l'URL pubblico della mini app (evita path dinamici del browser)
     return 'https://sticker-mint-nft-1754691872344.app.a0.dev';
   }, []);
 

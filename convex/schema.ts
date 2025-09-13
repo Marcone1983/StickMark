@@ -101,7 +101,9 @@ export default defineSchema({
     appBaseUrl: v.optional(v.string()),
     // API key opzionale per rimozione sfondo (ClipDrop)
     clipdropApiKey: v.optional(v.string()),
-    // Token opzionale Hugging Face per rimozione sfondo open-source
-    huggingfaceApiToken: v.optional(v.string()),
+    // Endpoint open-source Rembg (es. https://<tuo-dominio>/api/remove)
+    rembgUrl: v.optional(v.string()),
+    // Provider scelto per rimozione sfondo: 'rembg' (open-source) o 'clipdrop'
+    bgRemovalProvider: v.optional(v.union(v.literal("rembg"), v.literal("clipdrop"))),
   }),
 });
