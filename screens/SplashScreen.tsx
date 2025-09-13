@@ -1,12 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Image, StyleSheet, Animated, Easing, Platform, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useAction } from 'convex/react';
-import { api } from '../convex/_generated/api';
 
 export default function SplashScreen() {
   const navigation = useNavigation();
-  const setWebhook = useAction(api.payments.setTelegramWebhook);
   const progress = useRef(new Animated.Value(0)).current;
   const [done, setDone] = useState(false);
 
@@ -16,10 +13,8 @@ export default function SplashScreen() {
   }, []);
 
   useEffect(() => {
-    const url = `${baseUrl}/telegram/webhook`;
-    setWebhook({ url }).catch(() => {});
     Animated.timing(progress, { toValue: 1, duration: 1400, useNativeDriver: false, easing: Easing.out(Easing.cubic) }).start(() => setDone(true));
-  }, [baseUrl, progress, setWebhook]);
+  }, [progress]);
 
   useEffect(() => {
     if (done) {

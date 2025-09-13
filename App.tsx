@@ -9,6 +9,9 @@ import MarketplaceScreen from "./screens/MarketplaceScreen"
 import NftDetailScreen from "./screens/NftDetailScreen"
 import ConnectWalletScreen from "./screens/ConnectWalletScreen"
 import SplashScreen from "./screens/SplashScreen";
+import { ConvexProvider, ConvexReactClient } from 'convex/react';
+
+const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL || 'https://agreeable-meadowlark-896.convex.cloud');
 
 const Stack = createNativeStackNavigator();
 
@@ -32,9 +35,11 @@ function RootStack() {
 export default function App() {
   return (
     <SafeAreaProvider style={styles.container}>
-      <NavigationContainer>
-        <RootStack />
-      </NavigationContainer>
+      <ConvexProvider client={convex}>
+        <NavigationContainer>
+          <RootStack />
+        </NavigationContainer>
+      </ConvexProvider>
     </SafeAreaProvider>
   );
 }

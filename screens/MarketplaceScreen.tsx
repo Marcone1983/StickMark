@@ -102,13 +102,15 @@ export default function MarketplaceScreen() {
 
   const data = isLoading ? [1,2,3,4,5,6] : filtered;
 
+  const isWeb = Platform.OS === 'web';
+
   return (
     <View style={styles.container}>
       <FlatList
         data={data as any[]}
-        keyExtractor={(item: any, idx) => (isLoading ? String(item) : item._id)}
+        keyExtractor={(item: any, idx) => (isLoading ? String(item) : String(item._id))}
         numColumns={2}
-        stickyHeaderIndices={[0]}
+        {...(!isWeb ? { stickyHeaderIndices: [0] } : {})}
         ListHeaderComponent={header}
         columnWrapperStyle={{ gap: 12 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
