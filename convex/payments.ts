@@ -16,24 +16,16 @@ export const getSettings = query({
 });
 
 async function loadSettings(ctx: any) {
-  try {
-    const s = await ctx.runQuery(api.payments.getSettings, {});
-    // Valori di ripiego per operare subito; inserisci un documento in settings in produzione
-    return {
-      telegramBotToken: s.telegramBotToken ?? "8237299807:AAEb_AU0chsVBk4mgYyDJXPYkuBg3oq40rM",
-      tonDestinationWallet: s.tonDestinationWallet ?? "UQArbhbVEIkN4xSWis30yIrNGdmOTBbiMBduGeNTErPbviyR",
-      tonToStarsRate: s.tonToStarsRate ?? 250,
-      appBaseUrl: s.appBaseUrl ?? "https://sticker-mint-nft-1754691872344.app.a0.dev",
-    };
-  } catch {
-    // In assenza di settings, usa valori di ripiego
-    return {
-      telegramBotToken: "8237299807:AAEb_AU0chsVBk4mgYyDJXPYkuBg3oq40rM",
-      tonDestinationWallet: "UQArbhbVEIkN4xSWis30yIrNGdmOTBbiMBduGeNTErPbviyR",
-      tonToStarsRate: 250,
-      appBaseUrl: "https://sticker-mint-nft-1754691872344.app.a0.dev",
-    };
+  const s = await ctx.runQuery(api.payments.getSettings, {});
+  if (!s.telegramBotToken || !s.tonDestinationWallet || !s.tonToStarsRate || !s.appBaseUrl) {
+    throw new Error("Settings mancanti: configura telegramBotToken, tonDestinationWallet, tonToStarsRate, appBaseUrl");
   }
+  return {
+    telegramBotToken: s.telegramBotToken,
+    tonDestinationWallet: s.tonDestinationWallet,
+    tonToStarsRate: s.tonToStarsRate,
+    appBaseUrl: s.appBaseUrl,
+  } as const;
 }
 
 function tonDeeplink(to: string, amountTon: number, comment: string) {

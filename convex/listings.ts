@@ -1,6 +1,65 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
+// Crea un record NFT "draft" per generare un metadata URL stabile
+export const createNftDraft = mutation({
+  args: {
+    owner: v.string(),
+    stickerId: v.id("stickers"),
+    name: v.string(),
+    description: v.string(),
+    imageUrl: v.string(),
+  },
+  returns: v.id("nfts"),
+  handler: async (ctx, args) => {
+    const id = await ctx.db.insert("nfts", {
+      owner: args.owner,
+      stickerId: args.stickerId,
+      name: args.name,
+      description: args.description,
+      imageUrl: args.imageUrl,
+      chain: "TON",
+      tokenId: "pending",
+      metadataUrl: "pending",
+      onChain: false,
+    } as any);
+    // metadataUrl sarà riempito dopo nella finalize
+    return id;
+  },
+});
+
+// Completa i campi on-chain dopo mint reale
+export const finalizeMint = mutation({
+  args: {
+    nftId: v.id("nfts"),
+    network: v.union(v.literal("mainnet"), v.literal("testnet")),
+    collectionAddress: v.string(),
+    nftAddress: v.string(),
+    itemIndex: v.number(),
+    txHash: v.optional(v.string()),
+  },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    const nft = await ctx.db.get(args.nftId);
+    if (!nft) return false;
+    const s = await ctx.db.query("settings").order("desc").first();
+    const appBase = (s as any)?.appBaseUrl ?? "";
+    const metadataUrl = `${String(appBase).replace(/\/$/, "")}/nft/metadata?id=${args.nftId}`;
+    await ctx.db.patch(args.nftId, {
+      tokenId: args.nftAddress,
+      metadataUrl,
+      network: args.network,
+      collectionAddress: args.collectionAddress,
+      nftAddress: args.nftAddress,
+      itemIndex: args.itemIndex,
+      txHash: args.txHash ?? "",
+      onChain: true,
+      chain: "TON",
+    } as any);
+    return true;
+  },
+});
+
 export const listActive = query({
   args: { currency: v.optional(v.union(v.literal("TON"), v.literal("STARS"))) },
   returns: v.array(

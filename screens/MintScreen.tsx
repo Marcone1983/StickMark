@@ -18,6 +18,7 @@ export default function MintScreen() {
   const [isAuction, setIsAuction] = useState(false);
   const [minBid, setMinBid] = useState('1');
   const [buyNowPrice, setBuyNowPrice] = useState('2');
+  const [ownerTon, setOwnerTon] = useState('');
 
   const createSticker = useMutation(api.listings.createSticker);
   const mintNft = useMutation(api.listings.mintNft);
@@ -57,18 +58,21 @@ export default function MintScreen() {
       const imageUrl = saved.imageUrl;
 
       const sticker = await createSticker({ owner: "@you", fileId: storageId, name, description: desc, imageUrl });
+
+      // NOTE: On-chain TON mint action is disabled in this environment because server cannot bundle @ton/*.
+      // Once backend supports @ton/*, switch to on-chain action and remove this local mintNft path for TON.
       const tokenId = `stkr-${Date.now()}`;
       const metadataUrl = imageUrl;
-      const nft = await mintNft({ owner: "@you", stickerId: sticker._id, name, description: desc, imageUrl, chain, tokenId, metadataUrl });
+      const nft = await mintNft({ owner: "@you", stickerId: (sticker as any)._id, name, description: desc, imageUrl, chain, tokenId, metadataUrl });
 
       if (isAuction) {
         if (!minBid || !buyNowPrice) {
           Alert.alert('Compila i campi d\'asta');
           return;
         }
-        await createAuction({ nftId: nft._id, seller: "@you", currency: chain, minBid: Number(minBid), buyNowPrice: Number(buyNowPrice) });
+        await createAuction({ nftId: (nft as any)._id, seller: "@you", currency: chain, minBid: Number(minBid), buyNowPrice: Number(buyNowPrice) });
       } else {
-        await createListing({ nftId: nft._id, seller: "@you", price: Number(price), currency: chain });
+        await createListing({ nftId: (nft as any)._id, seller: "@you", price: Number(price), currency: chain });
       }
 
       navigation.navigate('Marketplace' as never);
@@ -99,6 +103,22 @@ export default function MintScreen() {
         <Text style={styles.label}>Descrizione</Text>
         <TextInput value={desc} onChangeText={setDesc} placeholder="Dettagli, collezione, autore" placeholderTextColor="#6B7280" style={[styles.input, { height: 80 }]} multiline />
       </View>
+
+      {chain === 'TON' && (
+        <View style={styles.field}>
+          <Text style={styles.label}>Owner TON address</Text>
+          <TextInput
+            value={ownerTon}
+            onChangeText={setOwnerTon}
+            style={styles.input}
+            placeholder="es. UQArbhbV..."
+            placeholderTextColor="#6B7280"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+        </View>
+      )}
+
       <View style={{ flexDirection: 'row', gap: 12 }}>
         <View style={[styles.field, { flex: 1 }]}> 
           <Text style={styles.label}>Supply</Text>

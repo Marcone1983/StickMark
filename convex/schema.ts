@@ -19,7 +19,17 @@ export default defineSchema({
     chain: v.union(v.literal("TON"), v.literal("STARS")),
     tokenId: v.string(), // on-chain or logical id
     metadataUrl: v.string(),
-  }).index("by_owner", ["owner"]).index("by_sticker", ["stickerId"]),
+    // --- ON-CHAIN FIELDS (TON) ---
+    network: v.optional(v.union(v.literal("mainnet"), v.literal("testnet"))),
+    collectionAddress: v.optional(v.string()),
+    nftAddress: v.optional(v.string()),
+    itemIndex: v.optional(v.number()),
+    txHash: v.optional(v.string()),
+    onChain: v.optional(v.boolean()),
+  })
+    .index("by_owner", ["owner"]) 
+    .index("by_sticker", ["stickerId"]) 
+    .index("by_nftAddress", ["nftAddress"]),
 
   listings: defineTable({
     nftId: v.id("nfts"),
@@ -40,7 +50,7 @@ export default defineSchema({
   })
     .index("by_active", ["active"]) 
     .index("by_currency_and_active", ["currency", "active"]) 
-    .index("by_nft", ["nftId"])
+    .index("by_nft", ["nftId"]) 
     .index("by_nft_and_active", ["nftId", "active"]),
 
   bids: defineTable({
@@ -99,11 +109,12 @@ export default defineSchema({
     tonToStarsRate: v.number(), // quante Stars per 1 TON (es. 250)
     // Base URL pubblico dell'app per bot Web App
     appBaseUrl: v.optional(v.string()),
+    // --- TON CONFIG ---
+    tonNetwork: v.optional(v.union(v.literal("mainnet"), v.literal("testnet"))),
+    tonCollectionAddress: v.optional(v.string()),
     // API key opzionale per rimozione sfondo (ClipDrop)
     clipdropApiKey: v.optional(v.string()),
-    // Endpoint open-source Rembg (es. https://<tuo-dominio>/api/remove)
-    rembgUrl: v.optional(v.string()),
-    // Provider scelto per rimozione sfondo: 'rembg' (open-source) o 'clipdrop'
-    bgRemovalProvider: v.optional(v.union(v.literal("rembg"), v.literal("clipdrop"))),
+    // Token opzionale Hugging Face per rimozione sfondo open-source
+    huggingfaceApiToken: v.optional(v.string()),
   }),
 });
