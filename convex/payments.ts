@@ -4,6 +4,7 @@ import { api } from "./_generated/api";
 
 // In produzione, i segreti vanno in tabella settings (non hardcoded)
 const TON_API = "https://tonapi.io"; // public read API
+const CONVEX_HTTP_BASE = "https://agreeable-meadowlark-896.convex.site"; // Public HTTP router base for webhook/manifest
 
 export const getSettings = query({
   args: {},
@@ -541,6 +542,57 @@ export const configureBotMenu = action({
             web_app: { url },
           },
         }),
+      });
+
+      return { ok: true } as const;
+    } catch (e: any) {
+      return { ok: false, details: String(e?.message || e) } as const;
+    }
+  },
+});
+
+// Azione amministrativa: setta token+baseUrl in modo atomico e configura webhook/menu usando il token fornito
+export const adminConfigureBot = action({
+  args: { telegramBotToken: v.string(), baseUrl: v.string() },
+  returns: v.object({ ok: v.boolean(), details: v.optional(v.string()) }),
+  handler: async (ctx, args) => {
+    // Aggiorna/crea le impostazioni con token + baseUrl
+    const current = await ctx.db.query("settings").order("desc").first();
+    if (current) {
+      await ctx.db.patch(current._id, { telegramBotToken: args.telegramBotToken, appBaseUrl: args.baseUrl } as any);
+    } else {
+      await ctx.db.insert("settings", { telegramBotToken: args.telegramBotToken, appBaseUrl: args.baseUrl } as any);
+    }
+
+    // Configura webhook e menu usando il token fornito direttamente (evitiamo dipendere da loadSettings in caso di race)
+    try {
+      const webhookUrl = `${CONVEX_HTTP_BASE}/telegram/webhook`;
+      // setWebhook
+      await fetch(`https://api.telegram.org/bot${args.telegramBotToken}/setWebhook`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: webhookUrl, allowed_updates: ["message","pre_checkout_query","callback_query","successful_payment"] }),
+      });
+
+      // setMyCommands
+      await fetch(`https://api.telegram.org/bot${args.telegramBotToken}/setMyCommands`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          commands: [
+            { command: "market", description: "Apri il marketplace" },
+            { command: "mint", description: "Mint di un nuovo sticker" },
+            { command: "help", description: "Guida e supporto" },
+          ],
+          language_code: "it",
+        }),
+      });
+
+      // setChatMenuButton -> menu blu a sinistra con Web App
+      await fetch(`https://api.telegram.org/bot${args.telegramBotToken}/setChatMenuButton`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ menu_button: { type: "web_app", text: "Sticker Mark", web_app: { url: args.baseUrl } } }),
       });
 
       return { ok: true } as const;

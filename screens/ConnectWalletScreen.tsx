@@ -31,7 +31,7 @@ export default function ConnectWalletScreen() {
   const tonconnectUniversal = `tonconnect://connect?manifest=${encodeURIComponent(manifestUrl)}`;
   const tgTonconnect = `tg://resolve?domain=wallet&startattach=tonconnect`;
   const telegramWallet = 'https://t.me/wallet?attach=wallet';
-  const botLink = botUname ? `https://t.me/${botUname}` : 'https://t.me/wallet';
+  const botLink = `https://t.me/${'NFTSTIBOT'}`;
 
   const save = () => {
     if (!address || address.length < 5) {

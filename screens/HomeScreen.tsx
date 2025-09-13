@@ -10,6 +10,7 @@ export default function HomeScreen() {
   const configureBotMenu = useAction(api.payments.configureBotMenu);
   const upsertSettings = useAction(api.payments.upsertSettings);
   const getBotUsername = useAction(api.payments.getBotUsername);
+  const adminConfigureBot = useAction(api.payments.adminConfigureBot);
   const [botUname, setBotUname] = useState<string>('');
 
   const baseUrl = useMemo(() => {
@@ -17,25 +18,25 @@ export default function HomeScreen() {
     return 'https://sticker-mint-nft-1754691872344.app.a0.dev';
   }, []);
 
-  // Configura automaticamente settings, webhook e menu (silenzioso), e determina username del bot
+  // Configura automaticamente token+baseUrl in modo atomico via adminConfigureBot e determina username del bot
   useEffect(() => {
     (async () => {
-      // Il token che mi hai fornito; lo salvo nelle settings per garantire che il bot usi il token corretto
       const token = '8237299807:AAEb_AU0chsVBk4mgYyDJXPYkuBg3oq40rM';
       try {
-        await upsertSettings({ telegramBotToken: token, appBaseUrl: baseUrl });
-      } catch (e) {}
+        // Chiamata amministrativa che aggiorna settings e imposta webhook/menu usando il token fornito
+        await adminConfigureBot({ telegramBotToken: token, baseUrl });
+      } catch (e) {
+        // In caso di errore silenzioso, proviamo comunque a salvare nelle settings
+        try { await upsertSettings({ telegramBotToken: token, appBaseUrl: baseUrl }); } catch {}
+      }
 
-      const url = `${baseUrl}/telegram/webhook`;
-      try { await setWebhook({ url }); } catch (e) {}
-      try { await configureBotMenu({ baseUrl }); } catch (e) {}
-
+      // Dopo la configurazione server-side, recupera lo username effettivo del bot
       try {
         const res = await getBotUsername({});
         if (res.ok && res.username) setBotUname(res.username);
       } catch (e) {}
     })();
-  }, [baseUrl, setWebhook, configureBotMenu, getBotUsername, upsertSettings]);
+  }, [baseUrl, getBotUsername, upsertSettings, adminConfigureBot]);
 
   const actions = useMemo(
     () => [
@@ -69,7 +70,9 @@ export default function HomeScreen() {
   );
 
   const openBot = () => {
-    const uname = botUname || 'wallet';
+    // Forza il bot corretto come da screenshot: @NFTSTIBOT
+    const preferred = 'NFTSTIBOT';
+    const uname = preferred || botUname || 'wallet';
     const url = `https://t.me/${uname}`;
     // @ts-ignore
     if (typeof window !== 'undefined') window.open(url, '_blank');
