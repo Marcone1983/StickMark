@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Image, Alert, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Image, Alert, Platform, ActivityIndicator, TextInput } from 'react-native';
 import HeaderBack from '../components/HeaderBack';
-import { useAction, useMutation } from 'convex/react';
+import { useAction, useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { useNavigation } from '@react-navigation/native';
 
@@ -10,9 +10,30 @@ export default function CreateStickerScreen() {
   const [sourceUri, setSourceUri] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [clipKey, setClipKey] = useState('');
+  const [savingKey, setSavingKey] = useState(false);
 
   const getUploadUrl = useMutation(api.listings.getUploadUrl);
   const removeBg = useAction(api.images.removeBackground);
+  const settings = useQuery(api.imagesData.getSettings, {});
+  const upsertSettings = useMutation(api.payments.upsertSettings);
+  const clipdropConfigured = Boolean(settings?.clipdropApiKey);
+
+  const saveClipKey = async () => {
+    try {
+      if (!clipKey || clipKey.length < 8) {
+        Alert.alert('Chiave non valida');
+        return;
+      }
+      setSavingKey(true);
+      await upsertSettings({ clipdropApiKey: clipKey });
+      Alert.alert('Chiave salvata', 'Riapri questa schermata se non la vedi attiva.');
+    } catch (e: any) {
+      Alert.alert('Errore salvataggio chiave', e?.message || '');
+    } finally {
+      setSavingKey(false);
+    }
+  };
 
   const pickImage = async () => {
     try {
@@ -61,6 +82,10 @@ export default function CreateStickerScreen() {
         Alert.alert('Seleziona prima una foto');
         return;
       }
+      if (!clipdropConfigured) {
+        Alert.alert('Rimozione sfondo non configurata', 'Inserisci la tua chiave ClipDrop qui sotto e riprova.');
+        return;
+      }
       setUploading(true);
       const fileResp = await fetch(sourceUri);
       const blob = await fileResp.blob();
@@ -94,6 +119,23 @@ export default function CreateStickerScreen() {
       <Text style={styles.title}>Crea Sticker da immagine</Text>
       <Text style={styles.subtitle}>Carica una foto, rimuovi lo sfondo con un click, poi fai il mint.</Text>
 
+      {!clipdropConfigured && (
+        <View style={{ backgroundColor: '#0E1622', borderColor: '#1B2737', borderWidth: 1, padding: 12, borderRadius: 12, marginBottom: 10 }}>
+          <Text style={{ color: '#E3F2FF', marginBottom: 8 }}>Rimozione sfondo non configurata. Incolla la tua ClipDrop API key:</Text>
+          <TextInput
+            value={clipKey}
+            onChangeText={setClipKey}
+            placeholder="clipdrop_api_key_..."
+            placeholderTextColor="#6B7280"
+            autoCapitalize='none'
+            style={{ backgroundColor: '#0B1320', color: 'white', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 10, borderWidth: 1, borderColor: '#1B2737' }}
+          />
+          <Pressable onPress={saveClipKey} disabled={savingKey || clipKey.length < 8} style={[{ marginTop: 8, backgroundColor: '#24A1DE', paddingVertical: 10, borderRadius: 10, alignItems: 'center' }, (savingKey || clipKey.length < 8) && { opacity: 0.6 }]}>
+            <Text style={{ color: '#0B0B0C', fontWeight: '800' }}>{savingKey ? 'Salvataggio…' : 'Salva chiave'}</Text>
+          </Pressable>
+        </View>
+      )}
+
       <Pressable onPress={pickImage} style={({ pressed }) => [styles.selectBtn, pressed && { opacity: 0.8 }]}>
         <Text style={styles.selectText}>{sourceUri ? 'Sostituisci immagine' : 'Seleziona dal dispositivo'}</Text>
       </Pressable>
@@ -110,7 +152,7 @@ export default function CreateStickerScreen() {
       </View>
 
       <View style={{ flexDirection: 'row', gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
-        <Pressable onPress={process} disabled={!sourceUri || uploading} style={[styles.ctaSecondary, (!sourceUri || uploading) && { opacity: 0.6 }]}>
+        <Pressable onPress={process} disabled={!sourceUri || uploading || !clipdropConfigured} style={[styles.ctaSecondary, (!sourceUri || uploading || !clipdropConfigured) && { opacity: 0.6 }]}>
           <Text style={styles.ctaSecondaryText}>Rimuovi sfondo</Text>
         </Pressable>
         <Pressable onPress={() => continueToMint(false)} disabled={!resultUrl} style={[styles.cta, !resultUrl && { opacity: 0.6 }]}>

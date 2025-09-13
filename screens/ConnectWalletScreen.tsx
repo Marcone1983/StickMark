@@ -22,16 +22,18 @@ export default function ConnectWalletScreen() {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       return window.location.origin;
     }
-    // URL pubblicato su a0 (aggiorna se cambia)
     return 'https://sticker-mint-nft-1754691872344.app.a0.dev';
   }, []);
 
-  const manifestUrl = `${baseUrl}/tonconnect-manifest.json`;
+  // Use Convex public HTTP router for the manifest (this is where /tonconnect-manifest.json is served)
+  const convexHttpBase = 'https://agreeable-meadowlark-896.convex.site';
+  const manifestUrl = `${convexHttpBase}/tonconnect-manifest.json`;
+
   const tonkeeperLink = `https://app.tonkeeper.com/ton-connect?manifestUrl=${encodeURIComponent(manifestUrl)}`;
   const tonconnectUniversal = `tonconnect://connect?manifest=${encodeURIComponent(manifestUrl)}`;
   const tgTonconnect = `tg://resolve?domain=wallet&startattach=tonconnect`;
   const telegramWallet = 'https://t.me/wallet?attach=wallet';
-  const botLink = `https://t.me/${'NFTSTIBOT'}`;
+  const botLink = `https://t.me/${botUname || 'NFTSTIBOT'}`;
 
   const save = () => {
     if (!address || address.length < 5) {
@@ -49,7 +51,6 @@ export default function ConnectWalletScreen() {
     }
   };
   const openUniversalTonConnect = async () => {
-    // Try Telegram TonConnect attach, then universal, then wallet attach
     try {
       const okTg = await Linking.canOpenURL(tgTonconnect);
       if (okTg) {
