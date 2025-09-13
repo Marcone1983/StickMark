@@ -14,7 +14,7 @@ export default function HomeScreen() {
   const [botUname, setBotUname] = useState<string>('');
 
   const baseUrl = useMemo(() => {
-    // Forza sempre l'URL pubblico della mini app (evita path dinamici del browser)
+    if (Platform.OS === 'web' && typeof window !== 'undefined') return `${window.location.origin}${window.location.pathname}`.replace(/\/$/, '');
     return 'https://sticker-mint-nft-1754691872344.app.a0.dev';
   }, []);
 
@@ -70,9 +70,8 @@ export default function HomeScreen() {
   );
 
   const openBot = () => {
-    // Forza il bot corretto come da screenshot: @NFTSTIBOT
-    const preferred = 'NFTSTIBOT';
-    const uname = preferred || botUname || 'wallet';
+    // Usa lo username reale del bot letto dal backend; se manca, ripiega su wallet
+    const uname = botUname || 'wallet';
     const url = `https://t.me/${uname}`;
     // @ts-ignore
     if (typeof window !== 'undefined') window.open(url, '_blank');

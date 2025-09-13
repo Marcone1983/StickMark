@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Image, Alert, Platform, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Image, Alert, Platform, ActivityIndicator } from 'react-native';
 import HeaderBack from '../components/HeaderBack';
-import { useAction, useMutation, useQuery } from 'convex/react';
+import { useAction, useMutation } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { useNavigation } from '@react-navigation/native';
 
@@ -10,48 +10,9 @@ export default function CreateStickerScreen() {
   const [sourceUri, setSourceUri] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [clipKey, setClipKey] = useState('');
-  const [savingKey, setSavingKey] = useState(false);
-  const [rembgUrl, setRembgUrl] = useState('');
 
   const getUploadUrl = useMutation(api.listings.getUploadUrl);
-  const removeBg = useAction(api.images.removeBackground);
-  const settings = useQuery(api.imagesData.getSettings, {});
-  const upsertSettings = useMutation(api.payments.upsertSettings);
-  const clipdropConfigured = Boolean(settings?.clipdropApiKey);
-  const rembgConfigured = Boolean(settings?.rembgUrl);
-
-  const saveClipKey = async () => {
-    try {
-      if (!clipKey || clipKey.length < 8) {
-        Alert.alert('Chiave non valida');
-        return;
-      }
-      setSavingKey(true);
-      await upsertSettings({ clipdropApiKey: clipKey, bgRemovalProvider: 'clipdrop' });
-      Alert.alert('Chiave salvata', 'Riapri questa schermata se non la vedi attiva.');
-    } catch (e: any) {
-      Alert.alert('Errore salvataggio chiave', e?.message || '');
-    } finally {
-      setSavingKey(false);
-    }
-  };
-
-  const saveRembg = async () => {
-    try {
-      if (!rembgUrl || !/^https?:\/\//i.test(rembgUrl)) {
-        Alert.alert('URL non valido', 'Inserisci un URL completo (es. https://mio-server/rembg)');
-        return;
-      }
-      setSavingKey(true);
-      await upsertSettings({ rembgUrl, bgRemovalProvider: 'rembg' });
-      Alert.alert('Rembg attivato', 'Useremo il tuo endpoint open-source per rimuovere lo sfondo.');
-    } catch (e: any) {
-      Alert.alert('Errore salvataggio URL', e?.message || '');
-    } finally {
-      setSavingKey(false);
-    }
-  };
+  const removeBgOpen = useAction(api.images.removeBackgroundOpenSource);
 
   const pickImage = async () => {
     try {
@@ -64,6 +25,7 @@ export default function CreateStickerScreen() {
           if (file) {
             const url = URL.createObjectURL(file);
             setSourceUri(url);
+            setResultUrl(null);
           }
         };
         input.click();
@@ -87,7 +49,7 @@ export default function CreateStickerScreen() {
       });
       if (!result.canceled) {
         const uri = result.assets?.[0]?.uri as string | undefined;
-        if (uri) setSourceUri(uri);
+        if (uri) { setSourceUri(uri); setResultUrl(null); }
       }
     } catch (e: any) {
       Alert.alert('Errore selezione immagine', e?.message || '');
@@ -100,10 +62,6 @@ export default function CreateStickerScreen() {
         Alert.alert('Seleziona prima una foto');
         return;
       }
-      if (!clipdropConfigured) {
-        Alert.alert('Rimozione sfondo non configurata', 'Inserisci la tua chiave ClipDrop qui sotto e riprova.');
-        return;
-      }
       setUploading(true);
       const fileResp = await fetch(sourceUri);
       const blob = await fileResp.blob();
@@ -113,7 +71,8 @@ export default function CreateStickerScreen() {
       if (!putResp.ok) throw new Error(`Upload failed: ${putResp.status}`);
       const { storageId } = (await putResp.json()) as { storageId: string };
 
-      const removed = await removeBg({ fileId: storageId, contentType: blob.type || 'image/png' });
+      // Open-source background removal (no token required)
+      const removed = await removeBgOpen({ fileId: storageId as any, contentType: blob.type || 'image/png' });
       setResultUrl(removed.imageUrl);
     } catch (e: any) {
       Alert.alert('Rimozione sfondo non disponibile', e?.message || '');
@@ -135,42 +94,7 @@ export default function CreateStickerScreen() {
     <View style={styles.container}>
       <HeaderBack title="Crea Sticker" />
       <Text style={styles.title}>Crea Sticker da immagine</Text>
-      <Text style={styles.subtitle}>Carica una foto, rimuovi lo sfondo con un click, poi fai il mint.</Text>
-
-      {!rembgConfigured && (
-        <View style={{ backgroundColor: '#0E1622', borderColor: '#1B2737', borderWidth: 1, padding: 12, borderRadius: 12, marginBottom: 10 }}>
-          <Text style={{ color: '#E3F2FF', marginBottom: 6 }}>Vuoi usare rimozione sfondo open-source gratuita?</Text>
-          <Text style={{ color: '#9CA3AF', marginBottom: 8 }}>Inserisci qui l'URL del tuo endpoint Rembg (self‑host):</Text>
-          <TextInput
-            value={rembgUrl}
-            onChangeText={setRembgUrl}
-            placeholder="https://dominio.tld/api/rembg"
-            placeholderTextColor="#6B7280"
-            autoCapitalize='none'
-            style={{ backgroundColor: '#0B1320', color: 'white', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 10, borderWidth: 1, borderColor: '#1B2737', marginBottom: 8 }}
-          />
-          <Pressable onPress={saveRembg} disabled={savingKey || rembgUrl.length < 10} style={[{ backgroundColor: '#22C55E', paddingVertical: 10, borderRadius: 10, alignItems: 'center' }, (savingKey || rembgUrl.length < 10) && { opacity: 0.6 }]}>
-            <Text style={{ color: '#0B0B0C', fontWeight: '800' }}>{savingKey ? 'Salvataggio…' : 'Attiva Rembg (gratis)'}</Text>
-          </Pressable>
-        </View>
-      )}
-
-      {!clipdropConfigured && (
-        <View style={{ backgroundColor: '#0E1622', borderColor: '#1B2737', borderWidth: 1, padding: 12, borderRadius: 12, marginBottom: 10 }}>
-          <Text style={{ color: '#E3F2FF', marginBottom: 8 }}>In alternativa, puoi usare ClipDrop inserendo la tua API key:</Text>
-          <TextInput
-            value={clipKey}
-            onChangeText={setClipKey}
-            placeholder="clipdrop_api_key_..."
-            placeholderTextColor="#6B7280"
-            autoCapitalize='none'
-            style={{ backgroundColor: '#0B1320', color: 'white', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 10, borderWidth: 1, borderColor: '#1B2737' }}
-          />
-          <Pressable onPress={saveClipKey} disabled={savingKey || clipKey.length < 8} style={[{ marginTop: 8, backgroundColor: '#24A1DE', paddingVertical: 10, borderRadius: 10, alignItems: 'center' }, (savingKey || clipKey.length < 8) && { opacity: 0.6 }]}>
-            <Text style={{ color: '#0B0B0C', fontWeight: '800' }}>{savingKey ? 'Salvataggio…' : 'Salva chiave ClipDrop'}</Text>
-          </Pressable>
-        </View>
-      )}
+      <Text style={styles.subtitle}>Carica una foto, rimuovi lo sfondo con tecnologia open‑source, poi fai il mint.</Text>
 
       <Pressable onPress={pickImage} style={({ pressed }) => [styles.selectBtn, pressed && { opacity: 0.8 }]}>
         <Text style={styles.selectText}>{sourceUri ? 'Sostituisci immagine' : 'Seleziona dal dispositivo'}</Text>
@@ -188,7 +112,7 @@ export default function CreateStickerScreen() {
       </View>
 
       <View style={{ flexDirection: 'row', gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
-        <Pressable onPress={process} disabled={!sourceUri || uploading || (!rembgConfigured && !clipdropConfigured)} style={[styles.ctaSecondary, (!sourceUri || uploading || (!rembgConfigured && !clipdropConfigured)) && { opacity: 0.6 }]}>
+        <Pressable onPress={process} disabled={!sourceUri || uploading} style={[styles.ctaSecondary, (!sourceUri || uploading) && { opacity: 0.6 }]}>
           <Text style={styles.ctaSecondaryText}>Rimuovi sfondo</Text>
         </Pressable>
         <Pressable onPress={() => continueToMint(false)} disabled={!resultUrl} style={[styles.cta, !resultUrl && { opacity: 0.6 }]}>
