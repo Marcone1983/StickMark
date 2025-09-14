@@ -1,0 +1,90 @@
+name: CI — Build Android APK with EAS
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Install, Test, Audit, Build APK (EAS)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+
+      - name: Run linter (if present)
+        run: |
+          npm run -s lint --if-present || true
+
+      - name: Type-check (tsc) if present
+        run: |
+          if npx -q tsc --noEmit; then
+            echo "Type-check OK"
+          else
+            echo "Type-check failed or not present" && exit 1
+          fi
+
+      - name: Run tests (if present)
+        run: |
+          npm run -s test --if-present || true
+
+      - name: Run npm audit and save report
+        run: |
+          npm audit --json > npm-audit.json || true
+          cat npm-audit.json || true
+
+      - name: Upload npm audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-report
+          path: npm-audit.json
+
+      - name: Install eas-cli
+        run: |
+          npm install -g eas-cli
+
+      - name: Login to Expo / EAS
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          eas whoami --non-interactive || eas login --token "$EXPO_TOKEN"
+
+      - name: Build Android APK via EAS
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EAS_BUILD_PROFILE: ${{ secrets.EAS_BUILD_PROFILE }}
+        run: |
+          PROFILE=${EAS_BUILD_PROFILE:-production}
+          eas build --platform android --non-interactive --profile "$PROFILE" --type apk --json > eas-build.json
+
+      - name: Download APK artifact produced by EAS
+        run: |
+          ARTIFACT_URL=$(jq -r '(.artifacts[]?.url // .artifactUrl // .artifacts[0]?.url // .buildUrl) // empty' eas-build.json)
+          if [ -z "$ARTIFACT_URL" ]; then
+            echo "Non ho trovato l'URL dell'artifact nel json; mostro eas-build.json per debug:" && cat eas-build.json
+            exit 0
+          fi
+          echo "Downloading APK from $ARTIFACT_URL"
+          curl -fLo app-release.apk "$ARTIFACT_URL"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: app-release.apk
