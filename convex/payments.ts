@@ -8,10 +8,10 @@ const CONVEX_HTTP_BASE = "https://agreeable-meadowlark-896.convex.site"; // Publ
 
 export const getSettings = query({
   args: {},
-  returns: v.object({ telegramBotToken: v.optional(v.string()), tonDestinationWallet: v.optional(v.string()), tonToStarsRate: v.optional(v.number()), appBaseUrl: v.optional(v.string()) }),
+  returns: v.object({ telegramBotToken: v.optional(v.string()), tonDestinationWallet: v.optional(v.string()), tonToStarsRate: v.optional(v.number()), appBaseUrl: v.optional(v.string()), apiBaseUrl: v.optional(v.string()), tonNetwork: v.optional(v.union(v.literal("mainnet"), v.literal("testnet"))), tonCollectionAddress: v.optional(v.string()) }),
   handler: async (ctx) => {
     const s = await ctx.db.query("settings").order("desc").first();
-    return { telegramBotToken: s?.telegramBotToken, tonDestinationWallet: s?.tonDestinationWallet, tonToStarsRate: s?.tonToStarsRate, appBaseUrl: (s as any)?.appBaseUrl } as const;
+    return { telegramBotToken: s?.telegramBotToken, tonDestinationWallet: s?.tonDestinationWallet, tonToStarsRate: s?.tonToStarsRate, appBaseUrl: (s as any)?.appBaseUrl, apiBaseUrl: (s as any)?.apiBaseUrl, tonNetwork: (s as any)?.tonNetwork, tonCollectionAddress: (s as any)?.tonCollectionAddress } as const;
   },
 });
 
@@ -25,6 +25,7 @@ async function loadSettings(ctx: any) {
     tonDestinationWallet: s.tonDestinationWallet,
     tonToStarsRate: s.tonToStarsRate,
     appBaseUrl: s.appBaseUrl,
+    apiBaseUrl: s.apiBaseUrl,
   } as const;
 }
 
@@ -458,7 +459,7 @@ export const setTelegramWebhook = action({
 
 // Aggiorna/crea le impostazioni correnti
 export const upsertSettings = mutation({
-  args: { telegramBotToken: v.optional(v.string()), tonDestinationWallet: v.optional(v.string()), tonToStarsRate: v.optional(v.number()), appBaseUrl: v.optional(v.string()), clipdropApiKey: v.optional(v.string()), huggingfaceApiToken: v.optional(v.string()) },
+  args: { telegramBotToken: v.optional(v.string()), tonDestinationWallet: v.optional(v.string()), tonToStarsRate: v.optional(v.number()), appBaseUrl: v.optional(v.string()), apiBaseUrl: v.optional(v.string()), clipdropApiKey: v.optional(v.string()), huggingfaceApiToken: v.optional(v.string()), tonNetwork: v.optional(v.union(v.literal("mainnet"), v.literal("testnet"))), tonCollectionAddress: v.optional(v.string()) },
   returns: v.object({ ok: v.boolean() }),
   handler: async (ctx, args) => {
     const current = await ctx.db.query("settings").order("desc").first();
@@ -468,8 +469,11 @@ export const upsertSettings = mutation({
         ...(args.tonDestinationWallet ? { tonDestinationWallet: args.tonDestinationWallet } : {}),
         ...(typeof args.tonToStarsRate === 'number' ? { tonToStarsRate: args.tonToStarsRate } : {}),
         ...(args.appBaseUrl ? { appBaseUrl: args.appBaseUrl } : {}),
+        ...(args.apiBaseUrl ? { apiBaseUrl: args.apiBaseUrl } : {}),
         ...(args.clipdropApiKey ? { clipdropApiKey: args.clipdropApiKey } : {}),
         ...(args.huggingfaceApiToken ? { huggingfaceApiToken: args.huggingfaceApiToken } : {}),
+        ...(args.tonNetwork ? { tonNetwork: args.tonNetwork } : {}),
+        ...(args.tonCollectionAddress ? { tonCollectionAddress: args.tonCollectionAddress } : {}),
       } as any);
     } else {
       await ctx.db.insert("settings", {
@@ -477,8 +481,11 @@ export const upsertSettings = mutation({
         tonDestinationWallet: args.tonDestinationWallet ?? "",
         tonToStarsRate: args.tonToStarsRate ?? 250,
         appBaseUrl: args.appBaseUrl,
+        apiBaseUrl: args.apiBaseUrl,
         clipdropApiKey: args.clipdropApiKey,
         huggingfaceApiToken: args.huggingfaceApiToken,
+        tonNetwork: args.tonNetwork,
+        tonCollectionAddress: args.tonCollectionAddress,
       } as any);
     }
     return { ok: true } as const;

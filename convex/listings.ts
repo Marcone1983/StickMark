@@ -44,7 +44,8 @@ export const finalizeMint = mutation({
     if (!nft) return false;
     const s = await ctx.db.query("settings").order("desc").first();
     const appBase = (s as any)?.appBaseUrl ?? "";
-    const metadataUrl = `${String(appBase).replace(/\/$/, "")}/nft/metadata?id=${args.nftId}`;
+    const apiBase = (s as any)?.apiBaseUrl || appBase;
+    const metadataUrl = `${String(apiBase).replace(/\/$/, "")}/nft/metadata?id=${args.nftId}`;
     await ctx.db.patch(args.nftId, {
       tokenId: args.nftAddress,
       metadataUrl,

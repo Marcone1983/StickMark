@@ -77,8 +77,9 @@ export const mintAndRecord = action({
     const network = (s as any)?.tonNetwork ?? "mainnet";
     const collection = (s as any)?.tonCollectionAddress;
     const appBase = (s as any)?.appBaseUrl;
+    const apiBase = (s as any)?.apiBaseUrl || appBase;
     if (!collection) return { ok: false, reason: "tonCollectionAddress non configurato in settings" } as const;
-    if (!appBase)     return { ok: false, reason: "appBaseUrl non configurato in settings" } as const;
+    if (!apiBase)     return { ok: false, reason: "apiBaseUrl/appBaseUrl non configurato in settings" } as const;
     const MNEMONIC = (process.env.TON_MNEMONIC_24W || "").trim();
     if (!MNEMONIC) return { ok: false, reason: "TON_MNEMONIC_24W non impostato su Convex" } as const;
 
@@ -93,7 +94,7 @@ export const mintAndRecord = action({
       description: args.description,
       imageUrl: args.imageUrl,
     });
-    const metadataUrl = `${String(appBase).replace(/\/$/, "")}/nft/metadata?id=${nftId}`;
+    const metadataUrl = `${String(apiBase).replace(/\/$/, "")}/nft/metadata?id=${nftId}`;
 
     // 2) next_item_index
     const collAddr = Address.parse(collection);

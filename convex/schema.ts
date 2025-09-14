@@ -107,8 +107,10 @@ export default defineSchema({
     telegramBotToken: v.string(),
     tonDestinationWallet: v.string(),
     tonToStarsRate: v.number(), // quante Stars per 1 TON (es. 250)
-    // Base URL pubblico dell'app per bot Web App
+    // Base URL pubblico dell'app per bot Web App (UI)
     appBaseUrl: v.optional(v.string()),
+    // Base URL del router HTTP di Convex (API)
+    apiBaseUrl: v.optional(v.string()),
     // --- TON CONFIG ---
     tonNetwork: v.optional(v.union(v.literal("mainnet"), v.literal("testnet"))),
     tonCollectionAddress: v.optional(v.string()),
@@ -116,5 +118,8 @@ export default defineSchema({
     clipdropApiKey: v.optional(v.string()),
     // Token opzionale Hugging Face per rimozione sfondo open-source
     huggingfaceApiToken: v.optional(v.string()),
+    // Provider open-source opzionale (self-host)
+    rembgUrl: v.optional(v.string()),
+    bgRemovalProvider: v.optional(v.union(v.literal("rembg"), v.literal("clipdrop"))),
   }),
 });

@@ -87,9 +87,13 @@ export default function CreateStickerScreen() {
       const { storageId } = (await putResp.json()) as { storageId: string };
 
       const removed = await removeBgOpen({ fileId: storageId as any, contentType: contentType || 'image/png' });
-      setResultUrl(removed.imageUrl);
+      if (removed?.imageUrl && typeof removed.imageUrl === 'string') {
+        setResultUrl(removed.imageUrl);
+      } else {
+        throw new Error('Risultato non valido dal servizio di scontorno');
+      }
     } catch (e: any) {
-      Alert.alert('Servizio rimozione sfondo temporaneamente non disponibile', e?.message || '');
+      Alert.alert('Rimozione sfondo non disponibile', e?.message || 'Riprova tra poco');
     } finally {
       setUploading(false);
     }
