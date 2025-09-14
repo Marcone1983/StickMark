@@ -43,10 +43,13 @@ export default function HomeScreen() {
     if (typeof window !== 'undefined') window.open(url, '_blank');
   };
 
+  // Usa direttamente l'URL remoto per il logo (il file locale non è un asset binario)
+  const LOGO_URL = 'https://nabdgzjpwhkjfimljnql.supabase.co/storage/v1/object/public/project_assets/faecd4f3-781e-4590-ae31-c9e1e6b3dcdc/assets/1689c808-e7eb-4643-b678-4f34773f7363_1000193689.png';
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Image source={require('../assets/1000193689.png')} style={styles.logo} />
+        <Image source={{ uri: LOGO_URL }} style={styles.logo} />
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>Sticker Mark</Text>
           <Text style={styles.subtitle}>Carica, crea, mint, vendi i tuoi sticker come NFT. Paga in TON o Stars.</Text>

@@ -25,9 +25,11 @@ export default function SplashScreen() {
 
   const width = progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
 
+  const LOGO_URL = 'https://nabdgzjpwhkjfimljnql.supabase.co/storage/v1/object/public/project_assets/faecd4f3-781e-4590-ae31-c9e1e6b3dcdc/assets/1689c808-e7eb-4643-b678-4f34773f7363_1000193689.png';
+
   return (
     <View style={styles.container}>
-      <Image source={require('../assets/1000193689.png')} style={styles.logo} />
+      <Image source={{ uri: LOGO_URL }} style={styles.logo} />
       <View style={styles.barBg}>
         <Animated.View style={[styles.barFill, { width }]} />
       </View>
