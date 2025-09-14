@@ -5,7 +5,7 @@
   "dependencies": {
     "@auth0/auth0-react": "2.0.1",
     "@clerk/clerk-react": "5.0.0",
-    "@orbs-network/ton-access": "^2.3.5",
+    "@orbs-network/ton-access": "github:orbs-network/ton-access",
     "@react-native-async-storage/async-storage": "latest",
     "@react-native-community/slider": "5.0.1",
     "@react-navigation/bottom-tabs": "7.4.7",
