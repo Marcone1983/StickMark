@@ -46,7 +46,6 @@ jobs:
           elif [ -f package-lock.json ]; then
             npm ci
           else
-            # No lockfile: use legacy-peer-deps to avoid ERESOLVE failures in CI
             npm install --legacy-peer-deps
           fi
 
