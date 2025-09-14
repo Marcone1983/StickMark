@@ -17,8 +17,8 @@ export const getSettings = query({
 
 async function loadSettings(ctx: any) {
   const s = await ctx.runQuery(api.payments.getSettings, {});
-  if (!s.telegramBotToken || !s.tonDestinationWallet || !s.tonToStarsRate || !s.appBaseUrl) {
-    throw new Error("Settings mancanti: configura telegramBotToken, tonDestinationWallet, tonToStarsRate, appBaseUrl");
+  if (!s.telegramBotToken || !s.tonDestinationWallet || !s.tonToStarsRate) {
+    throw new Error("Settings mancanti: configura telegramBotToken, tonDestinationWallet, tonToStarsRate");
   }
   return {
     telegramBotToken: s.telegramBotToken,

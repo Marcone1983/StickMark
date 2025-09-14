@@ -32,6 +32,7 @@ export default function HomeScreen() {
       { label: 'Mint NFT', subtitle: 'Trasforma lo sticker in NFT', route: 'Mint' },
       { label: 'Marketplace', subtitle: 'Compra e vendi gli sticker', route: 'Marketplace' },
       { label: 'Connetti Wallet TON', subtitle: 'Tonkeeper, Tonhub o Wallet Telegram', route: 'ConnectWallet' },
+      { label: 'Impostazioni', subtitle: 'Token bot, URL App/API, TON collection', route: 'AdminSettings' },
     ],
     []
   );

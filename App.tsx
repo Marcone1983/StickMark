@@ -29,6 +29,7 @@ function RootStack() {
       <Stack.Screen name="Marketplace" component={MarketplaceScreen} />
       <Stack.Screen name="NftDetail" component={NftDetailScreen} />
       <Stack.Screen name="ConnectWallet" component={ConnectWalletScreen} />
+      <Stack.Screen name="AdminSettings" component={require('./screens/AdminSettingsScreen').default} />
     </Stack.Navigator>
   );
 }

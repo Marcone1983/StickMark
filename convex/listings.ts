@@ -404,3 +404,24 @@ export const deleteNft = mutation({
     return { ok: true } as const;
   },
 });
+
+export const rebuildAllMetadataUrls = mutation({
+  args: {},
+  returns: v.object({ updated: v.number() }),
+  handler: async (ctx) => {
+    const s = await ctx.db.query("settings").order("desc").first();
+    const appBase = (s as any)?.appBaseUrl ?? "";
+    const apiBase = (s as any)?.apiBaseUrl || appBase;
+    const base = String(apiBase).replace(/\/$/, "");
+    let updated = 0;
+    const all = await ctx.db.query("nfts").collect();
+    for (const nft of all) {
+      const correct = `${base}/nft/metadata?id=${(nft as any)._id}`;
+      if ((nft as any).metadataUrl !== correct) {
+        await ctx.db.patch((nft as any)._id, { metadataUrl: correct } as any);
+        updated++;
+      }
+    }
+    return { updated } as const;
+  },
+});
