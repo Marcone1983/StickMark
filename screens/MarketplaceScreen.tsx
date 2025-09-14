@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, RefreshControl, TextInput, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable, RefreshControl, TextInput, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { api } from "../convex/_generated/api";
 import { useQuery } from "convex/react";
@@ -7,6 +7,13 @@ import NFTCard from '../components/NFTCard';
 import SkeletonCard from '../components/SkeletonCard';
 import EmptyState from '../components/EmptyState';
 import HeaderBack from '../components/HeaderBack';
+
+// Lightweight wrapper around FlatList tuned for web safety
+import { FlatList as RNFlatList } from 'react-native';
+const WebSafeFlatList = (props: any) => {
+  const isWeb = Platform.OS === 'web';
+  return <RNFlatList removeClippedSubviews={!isWeb ? true : false} {...props} />;
+};
 
 export default function MarketplaceScreen() {
   const navigation = useNavigation();
@@ -58,8 +65,8 @@ export default function MarketplaceScreen() {
     return seller === '@you' || seller?.toLowerCase?.().includes('official') || seller?.toLowerCase?.().includes('verify');
   }, []);
 
-  // Stabilizza header per evitare rimontaggi frequenti che su web possono rompere il DOM
-  const header = useMemo(() => (
+  // Header reso fuori dalla lista per evitare reparenting su web
+  const Header = (
     <View>
       <HeaderBack title="Marketplace" />
       <View style={styles.headerInner}>
@@ -99,33 +106,43 @@ export default function MarketplaceScreen() {
         </View>
       </View>
     </View>
-  ), [search, filter, sort, resultText]);
-
-  const data = isLoading ? [1,2,3,4,5,6] : filtered;
+  );
 
   const isWeb = Platform.OS === 'web';
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={data as any[]}
-        keyExtractor={(item: any, idx) => {
-          if (isLoading) return `skeleton-${idx}`;
-          const raw = (item && ((item as any)._id || (item as any).id || (item as any).nft?._id || (item as any).nft?.id)) ?? idx;
-          const str = typeof raw === 'string' ? raw : String(raw);
-          return `listing-${str}`;
-        }}
-        numColumns={2}
-        {...(!isWeb ? { stickyHeaderIndices: [0] } : {})}
-        ListHeaderComponent={header}
-        columnWrapperStyle={{ gap: 12 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        contentContainerStyle={{ gap: 12, paddingVertical: 8, paddingBottom: 24 }}
-        renderItem={({ item }) => (
-          <View style={{ flex: 1 }}>
-            {isLoading ? (
+      {Header}
+      {isLoading ? (
+        <WebSafeFlatList
+          key={`market-${isWeb ? 'web' : 'native'}-loading`}
+          data={[1,2,3,4,5,6]}
+          keyExtractor={(_, idx) => `skeleton-${idx}`}
+          numColumns={2}
+          columnWrapperStyle={{ gap: 12 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          contentContainerStyle={{ gap: 12, paddingVertical: 8, paddingBottom: 24 }}
+          renderItem={() => (
+            <View style={{ flex: 1 }}>
               <SkeletonCard />
-            ) : (
+            </View>
+          )}
+        />
+      ) : (
+        <WebSafeFlatList
+          key={`market-${isWeb ? 'web' : 'native'}-data`}
+          data={filtered as any[]}
+          keyExtractor={(item: any, idx) => {
+            const raw = (item && ((item as any)._id || (item as any).id || (item as any).nft?._id || (item as any).nft?.id)) ?? idx;
+            const str = typeof raw === 'string' ? raw : String(raw);
+            return `listing-${str}`;
+          }}
+          numColumns={2}
+          columnWrapperStyle={{ gap: 12 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          contentContainerStyle={{ gap: 12, paddingVertical: 8, paddingBottom: 24 }}
+          renderItem={({ item }) => (
+            <View style={{ flex: 1 }}>
               <NFTCard
                 imageUrl={item.nft.imageUrl}
                 name={item.nft.name}
@@ -137,18 +154,18 @@ export default function MarketplaceScreen() {
                 isVerified={isVerifiedSeller(item.seller)}
                 onPress={() => navigation.navigate('NftDetail' as never, { id: item.nft._id } as never)}
               />
-            )}
-          </View>
-        )}
-        ListEmptyComponent={isLoading ? undefined : (
-          <EmptyState
-            title="Nessun listing attivo"
-            description="Crea il tuo primo annuncio dalla sezione Mint"
-            ctaLabel="Vai al Mint"
-            onPressCta={() => navigation.navigate('Mint' as never)}
-          />
-        )}
-      />
+            </View>
+          )}
+          ListEmptyComponent={
+            <EmptyState
+              title="Nessun listing attivo"
+              description="Crea il tuo primo annuncio dalla sezione Mint"
+              ctaLabel="Vai al Mint"
+              onPressCta={() => navigation.navigate('Mint' as never)}
+            />
+          }
+        />
+      )}
     </View>
   );
 }

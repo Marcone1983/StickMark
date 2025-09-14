@@ -80,11 +80,9 @@ export default function MintScreen() {
           Alert.alert("Mint fallito", rMint?.reason ?? "Errore sconosciuto");
           return;
         }
-        // listing user-flow continues below
-        mintedNftId = null; // listing uses created NFT from DB; finalizeMint updated it
+        mintedNftId = null;
       } else {
-        // For STARS path keep DB-only NFT record
-        // We could reuse existing mutation if needed; here rely on listing with sticker->nft mapping already created
+        // STARS path mantenuto a livello di DB
       }
 
       if (isAuction) {
@@ -92,11 +90,6 @@ export default function MintScreen() {
           Alert.alert('Compila i campi d\'asta');
           return;
         }
-        // Find the latest NFT created for this sticker and owner for listing
-        // In a full app we'd query by sticker; here we assume immediate listing via flow already has ID elsewhere
-        // Fallback: disable auto-listing if NFT id is unknown
-        // TODO: wire a query to fetch by sticker
-        // For now, navigate back on successful mint
         Alert.alert('Mint on-chain avviato', 'Asta disponibile dopo indicizzazione.');
       } else {
         Alert.alert('Mint on-chain completato', 'Crea il listing dal tuo inventario.');

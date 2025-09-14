@@ -3,10 +3,10 @@ import { v } from "convex/values";
 
 export const getSettings = query({
   args: {},
-  returns: v.object({ clipdropApiKey: v.optional(v.string()), rembgUrl: v.optional(v.string()), bgRemovalProvider: v.optional(v.union(v.literal("rembg"), v.literal("clipdrop"))) }),
+  returns: v.object({ clipdropApiKey: v.optional(v.string()), rembgUrl: v.optional(v.string()), bgRemovalProvider: v.optional(v.union(v.literal("rembg"), v.literal("clipdrop"))), huggingfaceApiToken: v.optional(v.string()) }),
   handler: async (ctx) => {
     const s = await ctx.db.query("settings").order("desc").first();
-    return { clipdropApiKey: s?.clipdropApiKey, rembgUrl: (s as any)?.rembgUrl, bgRemovalProvider: (s as any)?.bgRemovalProvider } as const;
+    return { clipdropApiKey: s?.clipdropApiKey, rembgUrl: (s as any)?.rembgUrl, bgRemovalProvider: (s as any)?.bgRemovalProvider, huggingfaceApiToken: (s as any)?.huggingfaceApiToken } as const;
   },
 });
 

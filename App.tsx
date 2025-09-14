@@ -10,6 +10,7 @@ import NftDetailScreen from "./screens/NftDetailScreen"
 import ConnectWalletScreen from "./screens/ConnectWalletScreen"
 import SplashScreen from "./screens/SplashScreen";
 import { ConvexProvider, ConvexReactClient } from 'convex/react';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL || 'https://agreeable-meadowlark-896.convex.cloud');
 
@@ -36,9 +37,11 @@ export default function App() {
   return (
     <SafeAreaProvider style={styles.container}>
       <ConvexProvider client={convex}>
-        <NavigationContainer>
-          <RootStack />
-        </NavigationContainer>
+        <ErrorBoundary>
+          <NavigationContainer>
+            <RootStack />
+          </NavigationContainer>
+        </ErrorBoundary>
       </ConvexProvider>
     </SafeAreaProvider>
   );

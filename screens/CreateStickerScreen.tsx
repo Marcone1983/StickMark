@@ -89,7 +89,7 @@ export default function CreateStickerScreen() {
       const removed = await removeBgOpen({ fileId: storageId as any, contentType: contentType || 'image/png' });
       setResultUrl(removed.imageUrl);
     } catch (e: any) {
-      Alert.alert('Rimozione sfondo non disponibile', e?.message || '');
+      Alert.alert('Servizio rimozione sfondo temporaneamente non disponibile', e?.message || '');
     } finally {
       setUploading(false);
     }
@@ -117,11 +117,11 @@ export default function CreateStickerScreen() {
       <View style={[styles.previewRow] }>
         <View style={styles.previewBox}>
           <Text style={styles.previewTitle}>Originale</Text>
-          <View style={styles.previewInner}>{sourceUri ? <Image source={{ uri: sourceUri }} style={styles.previewImage} resizeMode='contain' /> : <Text style={styles.placeholder}>Nessuna</Text>}</View>
+          <View style={styles.previewInner}>{sourceUri ? <Image source={{ uri: sourceUri }} style={styles.previewImage} resizeMode='contain' /> : <Text style={styles.noData}>Nessuna</Text>}</View>
         </View>
         <View style={styles.previewBox}>
           <Text style={styles.previewTitle}>Sticker</Text>
-          <View style={styles.previewInner}>{resultUrl ? <Image source={{ uri: resultUrl }} style={styles.previewImage} resizeMode='contain' /> : uploading ? <ActivityIndicator color="#fff" /> : <Text style={styles.placeholder}>In attesa</Text>}</View>
+          <View style={styles.previewInner}>{resultUrl ? <Image source={{ uri: resultUrl }} style={styles.previewImage} resizeMode='contain' /> : uploading ? <ActivityIndicator color="#fff" /> : <Text style={styles.noData}>In attesa</Text>}</View>
         </View>
       </View>
 
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
   previewTitle: { color: '#9CA3AF', marginBottom: 6 },
   previewInner: { width: '100%', height: 200, borderRadius: 12, backgroundColor: '#151517', borderWidth: StyleSheet.hairlineWidth, borderColor: '#232327', alignItems: 'center', justifyContent: 'center' },
   previewImage: { width: '100%', height: '100%' },
-  placeholder: { color: '#6B7280' },
+  noData: { color: '#6B7280' },
   cta: { backgroundColor: '#22C55E', paddingVertical: 14, borderRadius: 12, alignItems: 'center', flex: 1, minWidth: 160 },
   ctaText: { color: '#0B0B0C', fontWeight: '800' },
   ctaSecondary: { backgroundColor: '#111116', paddingVertical: 14, borderRadius: 12, alignItems: 'center', flex: 1, minWidth: 160, borderWidth: StyleSheet.hairlineWidth, borderColor: '#232327' },

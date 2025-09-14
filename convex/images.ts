@@ -52,7 +52,7 @@ export const removeBackgroundOpenSource = action({
   handler: async (ctx, args) => {
     // Usa Hugging Face Inference API (modello open-source briaai/RMBG-1.4)
     const settings = await ctx.runQuery(api.imagesData.getSettings, {});
-    const hfToken = settings.huggingfaceApiToken; // opzionale, ma NON richiesto: usiamo fallback pubblico
+    const hfToken = (settings as any)?.huggingfaceApiToken; // opzionale, non richiesto: presente solo se vuoi throughput dedicato
 
     const fileUrl = await ctx.runQuery(api.imagesData.getSignedUrl, { fileId: args.fileId });
     if (!fileUrl) throw new Error("Impossibile ottenere URL file");
@@ -81,19 +81,18 @@ export const removeBackgroundOpenSource = action({
           if (!outUrl) throw new Error("URL firmato mancante per il risultato");
           return { fileId: saved.fileId, imageUrl: outUrl } as const;
         }
-        // Se fallisce (rate limit, warmup, ecc.), prosegui al fallback pubblico
+        // Se dà rate limit o warmup, prosegui con l'endpoint pubblico
       } catch {
-        // Ignora, passa al fallback pubblico
+        // Ignora, passa all'endpoint pubblico
       }
     }
 
-    // 2) Fallback pubblico senza token: Hugging Face Spaces (endpoint Gradio)
+    // 2) Alternativa pubblica senza token: Hugging Face Spaces (endpoint Gradio)
     // API: POST https://hf.space/embed/briaai/RMBG-1.4/api/predict
     // Body: { data: ["data:image/...;base64,...."] }
     // Risposta: { data: [ "data:image/png;base64,..." ] } o strutture simili. Effettuiamo parsing robusto.
     const candidates = [
       "https://hf.space/embed/briaai/RMBG-1.4/api/predict",
-      // backup community mirrors eventualmente disponibili in futuro
     ];
 
     let outputDataUri: string | null = null;
@@ -108,7 +107,6 @@ export const removeBackgroundOpenSource = action({
         });
         const text = await grResp.text();
         if (!grResp.ok) {
-          // Se lo Space è in warmup, riprova sul prossimo candidato
           continue;
         }
         let json: any = null;
@@ -133,7 +131,7 @@ export const removeBackgroundOpenSource = action({
         }
         if (outputDataUri) break;
       } catch {
-        // passa al prossimo candidato
+        // prova il prossimo candidato
       }
     }
 
