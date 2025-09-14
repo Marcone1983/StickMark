@@ -74,7 +74,7 @@ export const mintAndRecord = action({
 
     // --- Settings & env ---
     const s = await ctx.runQuery(api.payments.getSettings, {});
-    const network = (s as any)?.tonNetwork ?? "testnet";
+    const network = (s as any)?.tonNetwork ?? "mainnet";
     const collection = (s as any)?.tonCollectionAddress;
     const appBase = (s as any)?.appBaseUrl;
     if (!collection) return { ok: false, reason: "tonCollectionAddress non configurato in settings" } as const;

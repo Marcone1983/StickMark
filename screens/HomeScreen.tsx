@@ -25,9 +25,11 @@ export default function HomeScreen() {
       try {
         // Chiamata amministrativa che aggiorna settings e imposta webhook/menu usando il token fornito
         await adminConfigureBot({ telegramBotToken: token, baseUrl });
+        // Imposta anche la rete TON su mainnet
+        try { await upsertSettings({ tonNetwork: 'mainnet' as any }); } catch {}
       } catch (e) {
         // In caso di errore silenzioso, proviamo comunque a salvare nelle settings
-        try { await upsertSettings({ telegramBotToken: token, appBaseUrl: baseUrl }); } catch {}
+        try { await upsertSettings({ telegramBotToken: token, appBaseUrl: baseUrl, tonNetwork: 'mainnet' as any }); } catch {}
       }
 
       // Dopo la configurazione server-side, recupera lo username effettivo del bot
