@@ -18,15 +18,34 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js (no automatic cache)
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+
+      - name: Check for lockfile
+        run: |
+          if [ -f package-lock.json ]; then
+            echo "Found package-lock.json"
+          elif [ -f yarn.lock ]; then
+            echo "Found yarn.lock"
+          elif [ -f pnpm-lock.yaml ]; then
+            echo "Found pnpm-lock.yaml"
+          else
+            echo "::warning::No lockfile found. For reproducible installs and caching, commit package-lock.json / yarn.lock / pnpm-lock.yaml."
+          fi
 
       - name: Install dependencies
         run: |
-          npm ci
+          if [ -f pnpm-lock.yaml ]; then
+            corepack enable
+            corepack prepare pnpm@latest --activate
+            pnpm install --frozen-lockfile || pnpm install
+          elif [ -f yarn.lock ]; then
+            yarn install --frozen-lockfile || yarn install
+          else
+            npm ci || npm install
+          fi
 
       - name: Run linter (if present)
         run: |
