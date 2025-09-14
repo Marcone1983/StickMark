@@ -35,7 +35,7 @@ jobs:
             echo "::warning::No lockfile found. For reproducible installs and caching, commit package-lock.json / yarn.lock / pnpm-lock.yaml."
           fi
 
-      - name: Install dependencies
+      - name: Install dependencies (handles missing lockfile and peer conflicts)
         run: |
           if [ -f pnpm-lock.yaml ]; then
             corepack enable
@@ -43,8 +43,11 @@ jobs:
             pnpm install --frozen-lockfile || pnpm install
           elif [ -f yarn.lock ]; then
             yarn install --frozen-lockfile || yarn install
+          elif [ -f package-lock.json ]; then
+            npm ci
           else
-            npm ci || npm install
+            # No lockfile: use legacy-peer-deps to avoid ERESOLVE failures in CI
+            npm install --legacy-peer-deps
           fi
 
       - name: Run linter (if present)
